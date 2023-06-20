@@ -1,7 +1,6 @@
-//const fs = require('fs');
-const Tour = require(`./../models/tourModel`);
-const APIFeatures = require('./../utils/apiFeatures');
+const Tour = require('./../models/tourModel');
 const catchAsync = require('./../utils/catchAsync');
+const factory = require('./handlerFactory');
 const AppError = require('./../utils/appError');
 
 exports.aliasTopTours = (req, res, next) => {
@@ -11,275 +10,158 @@ exports.aliasTopTours = (req, res, next) => {
   next();
 };
 
-/*const tours = JSON.parse(
-  fs.readFileSync(`${__dirname}\\..\\dev-data\\data\\tours-simple.json`)
-);
-*/
+exports.getAllTours = factory.getAll(Tour);
+exports.getTour = factory.getOne(Tour, { path: 'reviews' });
+exports.createTour = factory.createOne(Tour);
+exports.updateTour = factory.updateOne(Tour);
+exports.deleteTour = factory.deleteOne(Tour);
 
-/* const tours = JSON.parse(
-      fs.readFileSync(
-        `C:\\_home\\_Github\\Node.js.Tests\\4-natours\\starter\\dev-data\\data\\tours-simple.json`
-      )
-    ); */
-
-//for Param middleware
-/* exports.checkID = (req, res, next, val) => {
-  if (req.params.id * 1 > tours.length) {
-    return res.status(404).json({
-      status: 'fail',
-      message: 'Invalid ID',
-    });
-  }
-  next();
-}; */
-
-/* exports.checkBody = (req, res, next) => {
-  if (!req.body.name || !req.body.price) {
-    return res.status(400).json({
-      status: 'fail',
-      message: 'messing name or price',
-    });
-  }
-  next();
-}; */
-
-exports.getAllTours = catchAsync(async (req, res, next) => {
-  // EXECUTE QUERY
-  const features = new APIFeatures(Tour.find(), req.query)
-    .filter()
-    .sort()
-    .limitFields()
-    .paginate();
-  const tours = await features.query;
-
-  // SEND RESPONSE
-  res.status(200).json({
-    status: 'success',
-    results: tours.length,
-    data: {
-      tours,
-    },
-  });
-});
-
-/* exports.getAllTours = async (req, res) => {
-  try {
-    /*Two types of filtering:
-    1)Mango
-     const tours = await  Tour.find({
-      duration: 5,
-      difficulty:'easy'
-    });
-    
-    2) Mangoose:
-      const tours = await Tour.find().Where('duartion').equals(5).where('difficulty').equals('easy')
-    
-
-    // console.log(req.requestTime);
-    const tours = await Tour.find();
-    res.status(200).json({
-      status: 'success',
-      //requetsedAt: req.requestTime,
-      results: tours.length,
-      data: {
-        tours: tours,
-      },
-    });
-  } catch (err) {
-    //console.log(err);
-    res.status(404).json({
-      status: 'fail',
-      message: err,
-    });
-  }
-}; */
-
-exports.getTour = catchAsync(async (req, res, next) => {
-  const tour = await Tour.findById(req.params.id); //console.log(req.params);
-
-  //const id = req.params.id * 1;
-
-  //const tour = tours.find((el) => el.id === id);
-
-  /*  if (!tour) {
-    return res.status(404).json({
-      status: 'fail',
-      message: 'Invalid ID',
-    });
-  } */
-
-  if (!tour) {
-    return next(new AppError('No tour found with that ID', 404));
-  }
-
-  res.status(200).json({
-    status: 'success',
-    data: {
-      tour,
-    },
-  });
-});
-
-exports.createTour = catchAsync(async (req, res, next) => {
-  //const newTour = await new Tour(req.body);
-  //newTour.save();
-  //console.log(req);
-  const newTour = await Tour.create(req.body);
-
-  res.status(201).json({
-    status: 'success',
-    data: {
-      tour: newTour,
-    },
-  });
-
-  /*console.log(req.body);
-
-  const newId = tours[tours.length - 1].id + 1;
-  const newTour = Object.assign({ id: newId }, req.body);
-  tours.push(newTour);*/
-  /*  fs.writeFile(
-    `${__dirname}\\dev-data\\data\\tours-simple.json`,
-    JSON.stringify(tours),
-    (err) => {
-      res.status(201).json({
-        status: 'success',
-        data: {
-          tour: newTour,
-        },
-      });
-    }
-  );*/
-});
-
-exports.updateTour = catchAsync(async (req, res, next) => {
-  const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    runValidator: true,
-  });
-
-  /*  if (req.params.id * 1 > tours.length) {
-    return res.status(404).json({
-      status: 'fail',
-      message: 'Invalid ID',
-    });
-  } */
-
-  if (!tour) {
-    return next(new AppError('No tour found with that ID', 404));
-  }
-
-  res.status(200).json({
-    status: 'success',
-    data: {
-      tour,
-    },
-  });
-});
-
-exports.deleteTour = catchAsync(async (req, res, next) => {
-  // try {
-  const tour = await Tour.findByIdAndDelete(req.params.id);
-
-  /*  if (req.params.id * 1 > tours.length) {
-    return res.status(404).json({
-      status: 'fail',
-      message: 'Invalid ID',
-    });
-  } */
-
-  if (!tour) {
-    return next(new AppError('No tour found with that ID', 404));
-  }
-
-  res.status(204).json({
-    status: 'success',
-    data: null,
-  });
-  /* } catch (err) {
-    //console.log(err);
-    res.status(400).json({
-      status: 'fail',
-      message: err,
-    });
-  }*/
-});
-
-//Aggregation pipeline
 exports.getTourStats = catchAsync(async (req, res, next) => {
   const stats = await Tour.aggregate([
     {
-      $match: { ratingsAverage: { $gte: 4.5 } },
+      $match: { ratingsAverage: { $gte: 4.5 } }
     },
     {
       $group: {
         _id: { $toUpper: '$difficulty' },
-        num: { $sum: 1 },
+        numTours: { $sum: 1 },
         numRatings: { $sum: '$ratingsQuantity' },
-        avgRation: { $avg: '$ratingsAverage' },
+        avgRating: { $avg: '$ratingsAverage' },
         avgPrice: { $avg: '$price' },
         minPrice: { $min: '$price' },
-        maxPrice: { $max: '$price' },
-      },
+        maxPrice: { $max: '$price' }
+      }
     },
     {
-      $sort: { avgPrice: 1 },
-    },
-    /*{
-        $match: { _id: { $ne: 'EASY' } },
-      },*/
+      $sort: { avgPrice: 1 }
+    }
+    // {
+    //   $match: { _id: { $ne: 'EASY' } }
+    // }
   ]);
+
   res.status(200).json({
     status: 'success',
     data: {
-      stats,
-    },
+      stats
+    }
   });
 });
 
 exports.getMonthlyPlan = catchAsync(async (req, res, next) => {
-  const year = req.params.year * 1;
+  const year = req.params.year * 1; // 2021
+
   const plan = await Tour.aggregate([
     {
-      $unwind: '$startDates',
+      $unwind: '$startDates'
     },
     {
       $match: {
         startDates: {
           $gte: new Date(`${year}-01-01`),
-          $lte: new Date(`${year}-12-31`),
-        },
-      },
+          $lte: new Date(`${year}-12-31`)
+        }
+      }
     },
     {
       $group: {
         _id: { $month: '$startDates' },
-        numToursStarts: { $sum: 1 },
-        tours: { $push: '$name' },
-      },
+        numTourStarts: { $sum: 1 },
+        tours: { $push: '$name' }
+      }
     },
     {
-      $addFields: {
-        month: '$_id',
-      },
+      $addFields: { month: '$_id' }
     },
     {
       $project: {
-        _id: 0,
-      },
+        _id: 0
+      }
     },
     {
-      $sort: { numToursStarts: -1 },
+      $sort: { numTourStarts: -1 }
     },
     {
-      $limit: 12,
-    },
+      $limit: 12
+    }
   ]);
 
   res.status(200).json({
     status: 'success',
     data: {
-      plan,
+      plan
+    }
+  });
+});
+
+// /tours-within/:distance/center/:latlng/unit/:unit
+// /tours-within/233/center/34.111745,-118.113491/unit/mi
+exports.getToursWithin = catchAsync(async (req, res, next) => {
+  const { distance, latlng, unit } = req.params;
+  const [lat, lng] = latlng.split(',');
+
+  const radius = unit === 'mi' ? distance / 3963.2 : distance / 6378.1;
+
+  if (!lat || !lng) {
+    next(
+      new AppError(
+        'Please provide latitutr and longitude in the format lat,lng.',
+        400
+      )
+    );
+  }
+
+  const tours = await Tour.find({
+    startLocation: { $geoWithin: { $centerSphere: [[lng, lat], radius] } }
+  });
+
+  res.status(200).json({
+    status: 'success',
+    results: tours.length,
+    data: {
+      data: tours
+    }
+  });
+});
+
+exports.getDistances = catchAsync(async (req, res, next) => {
+  const { latlng, unit } = req.params;
+  const [lat, lng] = latlng.split(',');
+
+  const multiplier = unit === 'mi' ? 0.000621371 : 0.001;
+
+  if (!lat || !lng) {
+    next(
+      new AppError(
+        'Please provide latitutr and longitude in the format lat,lng.',
+        400
+      )
+    );
+  }
+
+  const distances = await Tour.aggregate([
+    {
+      $geoNear: {
+        near: {
+          type: 'Point',
+          coordinates: [lng * 1, lat * 1]
+        },
+        distanceField: 'distance',
+        distanceMultiplier: multiplier
+      }
     },
+    {
+      $project: {
+        distance: 1,
+        name: 1
+      }
+    }
+  ]);
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      data: distances
+    }
   });
 });

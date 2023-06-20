@@ -10,6 +10,7 @@ const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
+const reviewRouter = require('./routes/reviewRoutes');
 
 //const { CLIENT_RENEG_LIMIT } = require('tls');
 
@@ -95,9 +96,9 @@ app.post('/', (req, res) => {
 
 //Better way
 //Routes
-
 app.use('/api/v1/tours', tourRouter); // a middleware to have specific routs
 app.use('/api/v1/users', userRouter); // a middleware to have specific routs
+app.use('/api/v1/reviews', reviewRouter); // a middleware to have specific routs
 /* app.route('/api/v1/tours').get(getAllTours).post(createTour);
 
 app
